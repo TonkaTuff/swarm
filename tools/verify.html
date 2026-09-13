@@ -1,0 +1,31 @@
+<!doctype html><meta charset=utf-8><title>verify</title><body style="background:#111;color:#eee;font:13px monospace">
+<div id=out>running…</div>
+<script src="/src/swarm.js"></script>
+<script>
+window.FULL = window.Swarm; delete window.Swarm;
+const names = Object.values(FULL.GROUPS).flat();
+const px = (lib, name, w, h, t, opts) => {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const x = c.getContext('2d'); lib.body(name, x, h, t, true, {w, ...opts});
+  return x.getImageData(0,0,w,h).data;
+};
+const load = src => new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+(async () => {
+  const bad = [], rows = [];
+  for (const name of names) {
+    delete window.Swarm;
+    await load('/dist/' + name + '.min.js?' + Math.random());
+    const one = window.Swarm;
+    if (!one) { bad.push(name + ': no global'); continue; }
+    for (const [label, opts] of [['plain',{}],['ink',{ink:1}],['lite+ground',{lite:1,ground:1}]]) {
+      const a = px(FULL, name, 200, 120, 2.5, opts), b = px(one, name, 200, 120, 2.5, opts);
+      let diff = 0; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) diff++;
+      if (diff) bad.push(`${name} ${label}: ${diff} bytes differ`);
+    }
+    rows.push(name);
+  }
+  document.getElementById('out').textContent =
+    (bad.length ? 'MISMATCH:\n' + bad.join('\n') : `identical: all ${rows.length} bodies match the full library across plain, ink, lite+ground`);
+  window.__done = { checked: rows.length, bad };
+})();
+</script>

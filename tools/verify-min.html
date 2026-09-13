@@ -1,0 +1,15 @@
+<!doctype html><meta charset=utf-8><title>verify min</title><body style="background:#111;color:#eee;font:13px monospace"><div id=out>running…</div>
+<script src="/src/swarm.js"></script>
+<script>window.FULL = window.Swarm; delete window.Swarm;</script>
+<script src="/dist/swarm.min.js"></script>
+<script>
+const MIN = window.Swarm, names = Object.values(FULL.GROUPS).flat(), bad = [];
+const px = (lib,n,w,h,t,o)=>{const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');lib.body(n,x,h,t,true,{w,...o});return x.getImageData(0,0,w,h).data;};
+for (const n of names) for (const [l,o] of [['plain',{}],['ink',{ink:1}],['lite+ground',{lite:1,ground:1}]]) {
+  const a=px(FULL,n,200,120,2.5,o), b=px(MIN,n,200,120,2.5,o);
+  let d=0; for(let i=0;i<a.length;i++) if(a[i]!==b[i]) d++;
+  if(d) bad.push(`${n} ${l}: ${d}`);
+}
+document.getElementById('out').textContent = bad.length ? 'MISMATCH\n'+bad.join('\n') : `minified full library identical across all ${names.length} bodies`;
+window.__done = { checked: names.length, bad };
+</script>
