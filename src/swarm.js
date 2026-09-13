@@ -1,4 +1,4 @@
-/*! swarm 0.1.0 — living things, drawn as dots. Canvas 2D, no dependencies. MIT. */
+/*! swarm 0.2.0 — living things, drawn as dots. Canvas 2D, no dependencies. MIT. */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else root.Swarm = factory();
@@ -120,9 +120,138 @@
     if (o.ground) paintRim(ctx, W, size);
   }
 
+  /* ================================================================== school */
+  // A bait ball: fish packed into a spinning sphere, each keeping its place in the shell, the whole
+  // ball turning about a tilted axis and breathing. Now and then a predator passes through and the
+  // fish flash outward from it, then close the hole behind it. All a function of time.
+  const SARDINE = { cold: [40, 60, 95], mid: [150, 175, 205], hot: [235, 242, 250], glow: [50, 90, 140] };
+  const SEA = ['#0b2a42', '#03101d'];
+  function drawSchool(ctx, size, t, dark, o = {}) {
+    const W = o.w ?? size, half = size / 2, cx = W / 2;
+    const ink = !!o.ink, pal = buildPal(o.palette || SARDINE);
+    const M = radiusScale(size), lite = o.lite ? 0.5 : 1, rMin = 0.3;
+    const dot = dotPainter(ctx, ink, dark);
+    const N = Math.round((o.n ?? 1400) * countScale(size, 1.3, 20) * lite * (ink ? 0.6 : 1));
+    const R = size * (o.reach ?? 0.3), T = t * (o.tempo ?? 1), spin = o.spin ?? 0.5, passes = o.passes ?? 1;
+    const cxf = (noise(T * 0.04, 3.1) - 0.5) * 0.3 * W, cyf = (noise(4.2, T * 0.05) - 0.5) * 0.25 * size;
+    const proj = makeProj(T * spin, 0.5 + 0.3 * Math.sin(T * 0.13));
+    const sx = 1 + 0.15 * Math.sin(T * 0.4), sy = 1 - 0.12 * Math.sin(T * 0.4 + 1);
+    // the predator: a point that sweeps through now and then
+    const pp = frac(T * 0.09), pass = pp < 0.35 * passes ? pp / (0.35 * passes) : -1;
+    const px = (pass * 2 - 1) * 1.6, py = 0.4 * Math.sin(T * 0.09 * TAU);
+    ctx.save();
+    if (o.ground) paintPill(ctx, W, size, (o.sky || SEA)[0], (o.sky || SEA)[1]);
+    ctx.translate(cx + cxf, half + cyf);
+    ctx.globalCompositeOperation = ink ? 'source-over' : 'lighter';
+    if (!ink && o.glow !== false) {
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, R * 1.5);
+      g.addColorStop(0, rgba(pal.glow, 0.2)); g.addColorStop(1, rgba(pal.glow, 0));
+      ctx.fillStyle = g; ctx.fillRect(-W, -size, 2 * W, 2 * size);
+    }
+    for (let i = 0; i < N; i++) {
+      const a = E(i, 1.1) * TAU, b = Math.acos(E(i, 2.2) * 2 - 1), r = 0.35 + 0.65 * E(i, 3.3) ** 0.5;   // a thick shell
+      let x = r * Math.sin(b) * Math.cos(a) * sx, y = r * Math.cos(b) * sy, z = r * Math.sin(b) * Math.sin(a);
+      // each fish jinks a little; the whole shell ripples
+      x += (noise(i * 0.11, T * 1.4) - 0.5) * 0.08; y += (noise(i * 0.13 + 7, T * 1.4) - 0.5) * 0.08 + 0.05 * Math.sin(x * 4 + T * 2);
+      let [qx, qy, qz] = proj(x, y, z);
+      if (pass >= 0) {   // flash expansion away from the predator
+        const dx = qx - px, dy = qy - py, d = Math.hypot(dx, dy), push = Math.max(0, 1 - d / 0.7) * 0.45 * Math.sin(pass * Math.PI);
+        if (d > 1e-4) { qx += dx / d * push; qy += dy / d * push; }
+      }
+      const depth = clamp01(0.5 + 0.5 * qz), flash = 0.5 + 0.5 * Math.sin(T * 6 + i * 0.7 + qx * 3) ** 6;   // silver flanks catching the light
+      dot(qx * R, -qy * R, Math.max(rMin, (0.4 + 0.6 * depth) * M), ink ? null : ramp(pal.ramp, 0.25 + 0.5 * depth + 0.25 * flash), (0.3 + 0.5 * depth) * (0.7 + 0.3 * flash), ink ? 0.05 + 0.3 * (1 - depth) : 0);
+    }
+    ctx.restore();
+    if (o.ground) paintRim(ctx, W, size);
+  }
+
+  /* ================================================================== fireflies */
+  // Fireflies over a dark meadow: each drifts on its own noisy path and blinks on its own clock,
+  // or, for the synchronous kinds, on a shared one with a wave passing through. Blue ghosts glow
+  // steadily instead of blinking, and stay low.
+  const FIREFLY = { cold: [30, 50, 25], mid: [170, 225, 60], hot: [240, 255, 190], glow: [110, 190, 60] };
+  const MEADOW = ['#0a140a', '#030603'];
+  function drawFireflies(ctx, size, t, dark, o = {}) {
+    const W = o.w ?? size, half = size / 2, cx = W / 2;
+    const ink = !!o.ink, pal = buildPal(o.palette || FIREFLY);
+    const M = radiusScale(size), lite = o.lite ? 0.5 : 1, rMin = 0.3;
+    const dot = dotPainter(ctx, ink, dark);
+    const N = Math.round((o.n ?? 80) * countScale(size, 1.2, 20) * Math.sqrt(W / size) * lite);
+    const T = t * (o.tempo ?? 1), sync = o.sync ?? 0, ghost = o.form === 'ghost', period = o.period ?? 2.2, duty = o.duty ?? 0.3;
+    ctx.save();
+    if (o.ground) paintPill(ctx, W, size, (o.sky || MEADOW)[0], (o.sky || MEADOW)[1]);
+    ctx.translate(cx, half);
+    ctx.globalCompositeOperation = ink ? 'source-over' : 'lighter';
+    for (let i = 0; i < N; i++) {
+      // a slow wander, low over the grass
+      const x = (noise(i * 0.31, T * 0.07 + i) - 0.5) * W * 1.1, y = (noise(i * 0.37 + 9, T * 0.06) - 0.5) * size * 0.8 + size * 0.1 + (ghost ? size * 0.2 : 0);
+      let lit;
+      if (ghost) lit = 0.6 + 0.4 * noise(T * 0.5, i * 0.2);
+      else {
+        const ph = sync ? frac(T / period + (x / W + 0.5) * 1.1 * sync + E(i, 4.4) * 0.04) : frac(T / (period * (0.85 + 0.3 * E(i, 5.5))) + E(i, 4.4));   // a wave crossing the field, or every clock its own
+        lit = ph < duty ? Math.sin(ph / duty * Math.PI) ** 0.7 : 0;
+      }
+      if (lit < 0.03) { dot(x, y, Math.max(rMin, M * 0.45), ink ? null : pal.ramp[0], 0.25, ink ? 0.7 : 0); continue; }   // dark between blinks, just a speck
+      const col = ink ? null : ramp(pal.ramp, 0.5 + 0.5 * lit);
+      if (!ink && o.glow !== false) dot(x, y, M * (2.4 + 2.4 * lit), pal.glow, 0.28 * lit, 0);
+      dot(x, y, Math.max(rMin, M * (0.7 + 0.6 * lit)), col, 0.45 + 0.55 * lit, ink ? 0.05 : 0);
+    }
+    ctx.restore();
+    if (o.ground) paintRim(ctx, W, size);
+  }
+
+  /* ================================================================== bees */
+  // Bees: a hanging swarm is a dense cluster with a cloud of flyers looping round it; a hive
+  // entrance is traffic in and out along a few lanes. Every bee flies a hashed loop, fast and jittery.
+  const BEE = { cold: [90, 60, 20], mid: [225, 175, 45], hot: [255, 235, 140], glow: [200, 150, 40] };
+  const ORCHARD = ['#1a1e12', '#070805'];
+  function drawBees(ctx, size, t, dark, o = {}) {
+    const W = o.w ?? size, half = size / 2, cx = W / 2;
+    const ink = !!o.ink, pal = buildPal(o.palette || BEE), hive = o.form === 'hive';
+    const M = radiusScale(size), lite = o.lite ? 0.5 : 1, rMin = 0.3;
+    const dot = dotPainter(ctx, ink, dark);
+    const N = Math.round((o.n ?? 500) * countScale(size, 1.3, 20) * lite * (ink ? 0.6 : 1));
+    const T = t * (o.tempo ?? 1), R = size * (o.reach ?? 0.2), jit = size * 0.012;
+    ctx.save();
+    if (o.ground) paintPill(ctx, W, size, (o.sky || ORCHARD)[0], (o.sky || ORCHARD)[1]);
+    ctx.translate(cx, half);
+    ctx.globalCompositeOperation = ink ? 'source-over' : 'lighter';
+    if (!ink && o.glow !== false && !hive) {
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, R * 1.8);
+      g.addColorStop(0, rgba(pal.glow, 0.14)); g.addColorStop(1, rgba(pal.glow, 0));
+      ctx.fillStyle = g; ctx.fillRect(-W, -size, 2 * W, 2 * size);
+    }
+    for (let i = 0; i < N; i++) {
+      let x, y, bright;
+      if (!hive && E(i, 1.1) < 0.7) {   // hanging in the cluster, a teardrop under a branch, barely moving
+        const a = E(i, 2.2) * TAU, r = Math.sqrt(E(i, 3.3)), d = E(i, 4.4) * 2 - 1;
+        x = Math.cos(a) * r * R * 0.8 + (noise(i * 0.2, T * 3) - 0.5) * jit;
+        y = -R * 0.3 + (d + 1) * R * 0.75 * (1 - r * r * 0.5) + (noise(i * 0.2 + 5, T * 3) - 0.5) * jit;
+        bright = 0.35 + 0.25 * E(i, 5.5);
+      } else if (hive) {   // a lane in or out of the entrance at the bottom middle
+        const out = E(i, 6.6) < 0.5, lane = (E(i, 7.7) - 0.5) * 1.2, sp = 0.35 + 0.25 * E(i, 8.8), q = frac(T * sp + E(i, 9.9)), qq = out ? q : 1 - q;
+        x = lane * W * 0.45 * qq + (noise(i * 0.17, T * 2.5) - 0.5) * size * 0.05 * qq;
+        y = size * 0.42 - qq * size * (0.6 + 0.3 * E(i, 1.3)) + (noise(i * 0.19 + 3, T * 2.5) - 0.5) * size * 0.05 * qq;
+        bright = 0.5 + 0.4 * (1 - qq);
+      } else {   // looping round the cluster, fast
+        const a0 = E(i, 2.4) * TAU, ra = R * (1.1 + 0.9 * E(i, 3.5)), rb = ra * (0.4 + 0.6 * E(i, 4.6)), w = (1.5 + 2 * E(i, 5.7)) * (E(i, 6.8) < 0.5 ? 1 : -1), tilt = E(i, 7.9) * Math.PI;
+        const th = w * T + a0, ex = Math.cos(th) * ra, ey = Math.sin(th) * rb;
+        x = ex * Math.cos(tilt) - ey * Math.sin(tilt) + (noise(i * 0.23, T * 4) - 0.5) * jit * 3;
+        y = ex * Math.sin(tilt) + ey * Math.cos(tilt) + R * 0.3 + (noise(i * 0.23 + 8, T * 4) - 0.5) * jit * 3;
+        bright = 0.6 + 0.4 * (0.5 + 0.5 * Math.sin(th));
+      }
+      dot(x, y, Math.max(rMin, M * (0.55 + 0.35 * bright)), ink ? null : ramp(pal.ramp, 0.3 + 0.6 * bright), 0.35 + 0.6 * bright, ink ? 0.1 + 0.4 * (1 - bright) : 0);
+    }
+    ctx.restore();
+    if (o.ground) paintRim(ctx, W, size);
+  }
+
   /* ================================================================== registry + driver */
   const MODES = {
-    flock: { draw: drawFlock, defaults: STARLING, state: 'wheeling' }
+    flock: { draw: drawFlock, defaults: STARLING, state: 'wheeling' },
+    school: { draw: drawSchool, defaults: SARDINE, state: 'schooling' },
+    fireflies: { draw: drawFireflies, defaults: FIREFLY, state: 'blinking' },
+    bees: { draw: drawBees, defaults: BEE, state: 'buzzing' }
   };
   const STATE_TO_MODE = Object.fromEntries(Object.entries(MODES).map(([m, v]) => [v.state, m]));
 
@@ -134,11 +263,26 @@
     'starlings': { mode: 'flock' },
     'rome':      { mode: 'flock', opts: { n: 2600, reach: 0.34, wave: 1.1, sky: ['#3a2440', '#140c1c'] } },
     'gretna':    { mode: 'flock', opts: { wave: 1.5, tempo: 1.15, sky: ['#26203a', '#0c0a16'] } },
-    'brighton':  { mode: 'flock', opts: { reach: 0.26, tempo: 1.25, sky: ['#2a3050', '#0c1020'] }, palette: P([100, 110, 140], [190, 200, 220], [250, 250, 255], [140, 160, 210]) }
+    'brighton':  { mode: 'flock', opts: { reach: 0.26, tempo: 1.25, sky: ['#2a3050', '#0c1020'] }, palette: P([100, 110, 140], [190, 200, 220], [250, 250, 255], [140, 160, 210]) },
+    // bait balls
+    'bait-ball':   { mode: 'school' },
+    'sardine-run': { mode: 'school', opts: { n: 2200, reach: 0.34, passes: 2, tempo: 1.2 } },
+    'anchovies':   { mode: 'school', opts: { n: 1600, reach: 0.24, tempo: 1.4, spin: 0.8 }, palette: P([30, 70, 110], [130, 180, 220], [225, 245, 255], [40, 110, 170]) },
+    // fireflies
+    'fireflies':   { mode: 'fireflies' },
+    'synchronous': { mode: 'fireflies', opts: { sync: 1, period: 3, duty: 0.25, n: 110 } },
+    'blue-ghosts': { mode: 'fireflies', opts: { form: 'ghost', n: 40 }, palette: P([30, 50, 60], [120, 200, 190], [200, 240, 230], [90, 170, 160]) },
+    // bees
+    'bee-swarm':   { mode: 'bees' },
+    'hive':        { mode: 'bees', opts: { form: 'hive', n: 400 } },
+    'hornets':     { mode: 'bees', opts: { n: 140, reach: 0.26, tempo: 1.5 }, palette: P([60, 40, 15], [200, 120, 30], [240, 200, 90], [160, 100, 30]) }
   };
   // named things by family, in display order
   const GROUPS = {
-    'Murmurations': ['starlings', 'rome', 'gretna', 'brighton']
+    'Murmurations': ['starlings', 'rome', 'gretna', 'brighton'],
+    'Bait balls': ['bait-ball', 'sardine-run', 'anchovies'],
+    'Fireflies': ['fireflies', 'synchronous', 'blue-ghosts'],
+    'Bees': ['bee-swarm', 'hive', 'hornets']
   };
 
   const reduced = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -205,7 +349,7 @@
   }
 
   return {
-    version: '0.1.0',
+    version: '0.2.0',
     register, mount, MODES, STATE_TO_MODE, BODIES, GROUPS,
     draw: (mode, ctx, size, t, dark, opts) => MODES[mode].draw(ctx, size, t, dark, opts),
     // draw a named thing: Swarm.body('starlings', ctx, 64, t, dark, { lite: true })

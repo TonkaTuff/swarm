@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Swarm</title>
-<meta name="description" content="Living things, drawn as dots on one canvas. Murmurations of starlings that wheel and fold. No dependencies, one script.">
+<meta name="description" content="Living things, drawn as dots on one canvas. Murmurations, bait balls, fireflies and bees. No dependencies, one script.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230a0c11'/%3E%3Ccircle cx='11' cy='13' r='2' fill='%23fac800'/%3E%3Ccircle cx='17' cy='10' r='2' fill='%23fac800'/%3E%3Ccircle cx='21' cy='15' r='2' fill='%23fac800'/%3E%3Ccircle cx='14' cy='19' r='2' fill='%23fac800'/%3E%3Ccircle cx='20' cy='21' r='2' fill='%23fac800'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -39,7 +39,7 @@ footer{padding:44px 0 64px;color:var(--ink-3);font-size:14px}
 <header class="wrap">
   <div class="eyebrow" id="eyebrow">swarm</div>
   <h1>Living things, drawn as dots.</h1>
-  <p class="lede">A murmuration of starlings that wheels, folds, thins and thickens, thousands of dots moving as one shape. More creatures to come. No dependencies, one script.</p>
+  <p class="lede">A murmuration of starlings that wheels and folds, a bait ball that spins and flashes, fireflies blinking over a meadow, bees round a swarm and in and out of a hive. No dependencies, one script.</p>
   <div class="hero"><canvas class="swarm" width="720" height="360" data-swarm-body="rome" data-swarm-ground="1"></canvas></div>
 </header>
 
@@ -51,8 +51,8 @@ footer{padding:44px 0 64px;color:var(--ink-3);font-size:14px}
   <div class="grid" id="flags"></div>
 
   <h2>Use it</h2>
-  <p class="sub">One script, then a canvas. Height is the size; a wider canvas gives the flock room to roam.</p>
-  <pre><code>&lt;script src="https://cdn.jsdelivr.net/gh/TonkaTuff/swarm@v0.1.0/dist/swarm.min.js"&gt;&lt;/script&gt;
+  <p class="sub">One script, then a canvas. Height is the size; a wider canvas gives them room to roam.</p>
+  <pre><code>&lt;script src="https://cdn.jsdelivr.net/gh/TonkaTuff/swarm@v0.2.0/dist/swarm.min.js"&gt;&lt;/script&gt;
 &lt;canvas class="swarm" width="300" height="200" data-swarm-body="starlings"&gt;&lt;/canvas&gt;</code></pre>
   <table>
     <tr><th>attribute</th><th>value</th><th>what it does</th></tr>
@@ -61,6 +61,9 @@ footer{padding:44px 0 64px;color:var(--ink-3);font-size:14px}
     <tr><td>data-swarm-reach</td><td>number</td><td>the flock's size as a fraction of the height (0.3)</td></tr>
     <tr><td>data-swarm-wave</td><td>number</td><td>how strongly density waves roll through it (1)</td></tr>
     <tr><td>data-swarm-tempo</td><td>number</td><td>how fast it all happens (1)</td></tr>
+    <tr><td>data-swarm-spin / -passes</td><td>number</td><td>bait balls: how fast the ball turns (0.5), how often a predator comes through (1)</td></tr>
+    <tr><td>data-swarm-sync / -period / -duty</td><td>number</td><td>fireflies: blink together with a wave (0 or 1), seconds per blink (2.2), how long each flash lasts as a fraction (0.22)</td></tr>
+    <tr><td>data-swarm-form</td><td>ghost · hive</td><td>blue ghosts glow instead of blinking; a hive is entrance traffic instead of a cluster</td></tr>
     <tr><td>data-swarm-ink / -lite / -ground</td><td>1</td><td>monochrome dots that follow the page theme · half the dots · a dusk sky behind</td></tr>
     <tr><td>data-swarm-glow</td><td>0</td><td>no soft glow, just the dots on a clear canvas</td></tr>
   </table>
@@ -74,9 +77,23 @@ const META = {
   starlings: 'the classic: a cloud that folds and pours',
   rome: 'the winter roosts over the Tiber, the biggest of all',
   gretna: 'the Scottish border, where the shapes get wildest',
-  brighton: 'over the old pier at dusk, small and quick'
+  brighton: 'over the old pier at dusk, small and quick',
+  'bait-ball': 'a spinning sphere of fish; a predator passes and it opens, then closes',
+  'sardine-run': 'bigger, faster, and the predators keep coming',
+  anchovies: 'small and tight and quick, blue in the light',
+  fireflies: 'each on its own clock, drifting low over the grass',
+  synchronous: 'the Great Smoky Mountains kind: a wave of light passing through',
+  'blue-ghosts': 'a steady blue-green glow, low and slow',
+  'bee-swarm': 'a cluster hanging from a branch, flyers looping round it',
+  hive: 'traffic in and out of the entrance, along a few lanes',
+  hornets: 'fewer, bigger, darker, faster'
 };
-const SUB = { Murmurations: 'Every bird keeps its place in a ball that wanders, stretches and folds, with waves rolling through it.' };
+const SUB = {
+  Murmurations: 'Every bird keeps its place in a ball that wanders, stretches and folds, with waves rolling through it.',
+  'Bait balls': 'A thick shell of fish turning about a tilted axis, silver flanks catching the light.',
+  Fireflies: 'Each drifts on its own noisy path and blinks on its own clock, or on a shared one.',
+  Bees: 'Every bee flies a hashed loop, fast and jittery.'
+};
 const nice = s => s[0].toUpperCase() + s.slice(1);
 const cell = (attrs, nm, meta) => `<div class="cell"><canvas class="swarm" width="220" height="140" ${attrs}></canvas><div class="nm">${nm}</div><div class="meta">${meta}</div></div>`;
 let h = '';
