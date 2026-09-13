@@ -39,7 +39,7 @@ footer{padding:44px 0 64px;color:var(--ink-3);font-size:14px}
 <header class="wrap">
   <div class="eyebrow" id="eyebrow">swarm</div>
   <h1>Living things, drawn as dots.</h1>
-  <p class="lede">A murmuration of starlings that wheels and folds, a bait ball that spins and flashes, fireflies blinking over a meadow, bees round a swarm and in and out of a hive. No dependencies, one script.</p>
+  <p class="lede">A murmuration of starlings that wheels and folds, a bait ball that spins and flashes, fireflies over a meadow, bees round a swarm, jellyfish drifting up, a bioluminescent bay, an ant trail, a crowd crossing. No dependencies, one script.</p>
   <div class="hero"><canvas class="swarm" width="720" height="360" data-swarm-body="rome" data-swarm-ground="1"></canvas></div>
 </header>
 
@@ -52,7 +52,7 @@ footer{padding:44px 0 64px;color:var(--ink-3);font-size:14px}
 
   <h2>Use it</h2>
   <p class="sub">One script, then a canvas. Height is the size; a wider canvas gives them room to roam.</p>
-  <pre><code>&lt;script src="https://cdn.jsdelivr.net/gh/TonkaTuff/swarm@v0.2.0/dist/swarm.min.js"&gt;&lt;/script&gt;
+  <pre><code>&lt;script src="https://cdn.jsdelivr.net/gh/TonkaTuff/swarm@v0.3.0/dist/swarm.min.js"&gt;&lt;/script&gt;
 &lt;canvas class="swarm" width="300" height="200" data-swarm-body="starlings"&gt;&lt;/canvas&gt;</code></pre>
   <table>
     <tr><th>attribute</th><th>value</th><th>what it does</th></tr>
@@ -63,7 +63,8 @@ footer{padding:44px 0 64px;color:var(--ink-3);font-size:14px}
     <tr><td>data-swarm-tempo</td><td>number</td><td>how fast it all happens (1)</td></tr>
     <tr><td>data-swarm-spin / -passes</td><td>number</td><td>bait balls: how fast the ball turns (0.5), how often a predator comes through (1)</td></tr>
     <tr><td>data-swarm-sync / -period / -duty</td><td>number</td><td>fireflies: blink together with a wave (0 or 1), seconds per blink (2.2), how long each flash lasts as a fraction (0.22)</td></tr>
-    <tr><td>data-swarm-form</td><td>ghost · hive</td><td>blue ghosts glow instead of blinking; a hive is entrance traffic instead of a cluster</td></tr>
+    <tr><td>data-swarm-form</td><td>ghost · hive · scramble · marathon</td><td>blue ghosts glow instead of blinking; a hive is entrance traffic instead of a cluster; a crowd can be a scramble crossing or a marathon</td></tr>
+    <tr><td>data-swarm-count / -bright / -leaf / -width / -lanes</td><td>number</td><td>jellyfish in the bloom (9); how bright the bay lights (1); 1 for ants carrying leaves; the trail's width (0.02); lanes across a concourse (5)</td></tr>
     <tr><td>data-swarm-ink / -lite / -ground</td><td>1</td><td>monochrome dots that follow the page theme · half the dots · a dusk sky behind</td></tr>
     <tr><td>data-swarm-glow</td><td>0</td><td>no soft glow, just the dots on a clear canvas</td></tr>
   </table>
@@ -86,13 +87,27 @@ const META = {
   'blue-ghosts': 'a steady blue-green glow, low and slow',
   'bee-swarm': 'a cluster hanging from a branch, flyers looping round it',
   hive: 'traffic in and out of the entrance, along a few lanes',
-  hornets: 'fewer, bigger, darker, faster'
+  hornets: 'fewer, bigger, darker, faster',
+  'jellyfish-bloom': 'bells pulsing on their own clocks, drifting up, tentacles trailing',
+  'moon-jellies': 'more of them, paler, smaller',
+  'bioluminescent-bay': 'plankton lighting up behind a paddle, waves flashing at the shore',
+  'mosquito-bay': 'Vieques, the brightest bay there is',
+  'ant-trail': 'nest to food and back, two dots an ant, crowded at the ends',
+  leafcutters: 'every ant coming home carries a leaf',
+  'army-ants': 'a wide column on the march',
+  concourse: 'streams crossing a hall on a few lanes, walking in twos and threes',
+  shibuya: 'cars run while people pile up on the corners, then everyone crosses at once',
+  marathon: 'a river of runners, each at their own pace'
 };
 const SUB = {
   Murmurations: 'Every bird keeps its place in a ball that wanders, stretches and folds, with waves rolling through it.',
   'Bait balls': 'A thick shell of fish turning about a tilted axis, silver flanks catching the light.',
   Fireflies: 'Each drifts on its own noisy path and blinks on its own clock, or on a shared one.',
-  Bees: 'Every bee flies a hashed loop, fast and jittery.'
+  Bees: 'Every bee flies a hashed loop, fast and jittery.',
+  Jellyfish: 'Each bell squeezes narrow and rounds out on its own beat.',
+  Bioluminescence: 'Everything the paddle stirred in the last few seconds glows and fades behind it.',
+  Ants: 'A wavy trail, ants going both ways with a wobble.',
+  Crowds: 'People from above. A scramble crossing runs on a fourteen-second light cycle.'
 };
 const nice = s => s[0].toUpperCase() + s.slice(1);
 const cell = (attrs, nm, meta) => `<div class="cell"><canvas class="swarm" width="220" height="140" ${attrs}></canvas><div class="nm">${nm}</div><div class="meta">${meta}</div></div>`;

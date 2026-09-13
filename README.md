@@ -1,13 +1,13 @@
 # Swarm
 
-Living things, drawn as dots. A murmuration of starlings that wheels and folds, a bait ball that spins and flashes, fireflies blinking over a meadow, bees round a swarm and in and out of a hive. Canvas 2D, no dependencies, one script.
+Living things, drawn as dots. A murmuration of starlings that wheels and folds, a bait ball that spins and flashes, fireflies over a meadow, bees round a swarm, jellyfish drifting up, a bioluminescent bay, an ant trail, a crowd crossing. Canvas 2D, no dependencies, one script.
 
 Third of the TonkaTuff libraries, after [Ephemeris](https://github.com/TonkaTuff/ephemeris) (the sky) and [Coriolis](https://github.com/TonkaTuff/coriolis) (the weather). The dots are sized the same way, so all three sit together on a page.
 
 ## Use it
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/TonkaTuff/swarm@v0.2.0/dist/swarm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/TonkaTuff/swarm@v0.3.0/dist/swarm.min.js"></script>
 <canvas class="swarm" width="300" height="200" data-swarm-body="starlings"></canvas>
 ```
 
@@ -30,6 +30,16 @@ Every `canvas.swarm` on the page mounts itself. Height sets the size; a wider ca
 | Bees | `bee-swarm` | a cluster hanging from a branch, flyers looping round it |
 | | `hive` | traffic in and out of the entrance, along a few lanes |
 | | `hornets` | fewer, bigger, darker, faster |
+| Jellyfish | `jellyfish-bloom` | bells pulsing on their own clocks, drifting up, tentacles trailing |
+| | `moon-jellies` | more of them, paler, smaller |
+| Bioluminescence | `bioluminescent-bay` | plankton lighting up behind a paddle, waves flashing at the shore |
+| | `mosquito-bay` | Vieques, the brightest bay there is |
+| Ants | `ant-trail` | nest to food and back, two dots an ant, crowded at the ends |
+| | `leafcutters` | every ant coming home carries a leaf |
+| | `army-ants` | a wide column on the march |
+| Crowds | `concourse` | streams crossing a hall on a few lanes, walking in twos and threes |
+| | `shibuya` | cars run while people pile up on the corners, then everyone crosses at once |
+| | `marathon` | a river of runners, each at their own pace |
 
 ## How it moves
 
@@ -46,7 +56,8 @@ Every bird keeps a fixed place in a ball. The ball wanders on a noisy path, its 
 | `data-swarm-tempo` | number | how fast it all happens, 1 by default |
 | `data-swarm-spin` `-passes` | number | bait balls: how fast the ball turns (0.5), how often a predator comes through (1) |
 | `data-swarm-sync` `-period` `-duty` | number | fireflies: blink together with a wave (0 or 1), seconds per blink (2.2), how long each flash lasts as a fraction (0.22) |
-| `data-swarm-form` | `ghost` `hive` | blue ghosts glow instead of blinking; a hive is entrance traffic instead of a cluster |
+| `data-swarm-form` | `ghost` `hive` `scramble` `marathon` | blue ghosts glow instead of blinking; a hive is entrance traffic instead of a cluster; a crowd can be a scramble crossing or a marathon |
+| `data-swarm-count` `-bright` `-leaf` `-width` `-lanes` | number | jellyfish in the bloom (9); how bright the bay lights (1); 1 for ants carrying leaves; the trail's width (0.02); lanes across a concourse (5) |
 | `data-swarm-ink` | `1` | monochrome dots that follow the page theme |
 | `data-swarm-lite` | `1` | half the dots |
 | `data-swarm-ground` | `1` | a dusk sky behind |
@@ -58,7 +69,7 @@ Any `data-swarm-<knob>` reaches the mode as `opts.knob`, numbers parsed. Colours
 
 ```js
 Swarm.body('rome', ctx, 200, t, dark, { w: 400, ground: true });
-Swarm.GROUPS;   // { Murmurations: [...], "Bait balls": [...], Fireflies: [...], Bees: [...] }
+Swarm.GROUPS;   // { Murmurations: [...], "Bait balls": [...], Fireflies: [...], Bees: [...], Jellyfish: [...], Bioluminescence: [...], Ants: [...], Crowds: [...] }
 ```
 
 ## Build
